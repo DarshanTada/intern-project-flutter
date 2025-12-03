@@ -1,0 +1,28 @@
+{
+  "name": "nhl-scores-backend",
+  "version": "1.0.0",
+  "description": "NHL Scores data ingestion service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "ingest": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "watch": "tsc --watch",
+    "add-test-data": "ts-node src/add-test-data.ts"
+  },
+  "keywords": ["nhl", "scores", "firestore"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.1.0",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
+
