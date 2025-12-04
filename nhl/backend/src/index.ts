@@ -92,6 +92,16 @@ class IngestionService {
     const startTime = Date.now();
     Logger.info('Starting NHL data ingestion...');
 
+    // Test API connectivity first
+    Logger.info('Testing NHL API connectivity...');
+    const isConnected = await this.nhlApi.testConnection();
+    if (!isConnected) {
+      Logger.error('NHL API connectivity test failed. The API endpoint may be unavailable or there may be network issues.');
+      Logger.info('Attempting to fetch data anyway, but this will likely fail...');
+    } else {
+      Logger.info('NHL API connectivity test passed.');
+    }
+
     try {
       let dates: string[];
       
@@ -112,7 +122,22 @@ class IngestionService {
       }
 
       // Fetch games from NHL API
-      const gamesByDate = await this.nhlApi.getGamesByDates(dates);
+      const { results: gamesByDate, failedDates } = await this.nhlApi.getGamesByDates(dates);
+      
+      // If all API calls failed, throw an error
+      if (failedDates.length === dates.length) {
+        throw new Error(
+          `Failed to fetch games for all requested dates. ` +
+          `This is likely due to network/DNS issues. ` +
+          `Please check your internet connection and DNS settings. ` +
+          `See TROUBLESHOOTING.md for more information.`
+        );
+      }
+
+      // Log warnings for partial failures
+      if (failedDates.length > 0) {
+        Logger.warn(`Failed to fetch games for ${failedDates.length} date(s): ${failedDates.join(', ')}`);
+      }
       
       let totalGames = 0;
       let processedGames = 0;

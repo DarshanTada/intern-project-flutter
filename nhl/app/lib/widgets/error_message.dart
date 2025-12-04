@@ -1,4 +1,5 @@
 /// Error message widget with retry option
+library;
 import 'package:flutter/material.dart';
 
 class ErrorMessage extends StatelessWidget {

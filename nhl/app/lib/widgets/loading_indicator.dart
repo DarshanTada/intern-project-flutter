@@ -1,4 +1,5 @@
 /// Loading indicator widget
+library;
 import 'package:flutter/material.dart';
 
 class LoadingIndicator extends StatelessWidget {

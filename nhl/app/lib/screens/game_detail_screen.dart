@@ -1,9 +1,15 @@
 /// Game detail screen showing all game information
+library;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/game.dart';
 import '../services/firestore_service.dart';
 import '../widgets/loading_indicator.dart';
 import '../widgets/error_message.dart';
+import '../widgets/animated_score.dart';
+import '../widgets/page_transitions.dart';
+import '../theme/nhl_theme.dart';
 import 'team_screen.dart';
 
 class GameDetailScreen extends StatelessWidget {
@@ -18,6 +24,10 @@ class GameDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Game Details'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: StreamBuilder<Game?>(
         stream: firestoreService.getGameStream(gameId),
@@ -34,9 +44,7 @@ class GameDetailScreen extends StatelessWidget {
           }
 
           if (!snapshot.hasData) {
-            return const ErrorMessage(
-              message: 'Game not found',
-            );
+            return const ErrorMessage(message: 'Game not found');
           }
 
           final game = snapshot.data!;
@@ -48,6 +56,7 @@ class GameDetailScreen extends StatelessWidget {
 
   Widget _buildGameDetails(BuildContext context, Game game) {
     final theme = Theme.of(context);
+    final isLive = game.isLive;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -56,102 +65,175 @@ class GameDetailScreen extends StatelessWidget {
         children: [
           // Score section
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  _buildTeamRow(
-                    context,
-                    game.awayTeam,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TeamScreen(teamId: game.awayTeam.id),
-                        ),
-                      );
-                    },
+                elevation: isLive ? 8 : 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: isLive
+                      ? const BorderSide(color: NHLTheme.nhlRed, width: 2)
+                      : BorderSide.none,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: isLive
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              NHLTheme.nhlDarkGray,
+                              NHLTheme.nhlDarkGray.withOpacity(0.8),
+                            ],
+                          )
+                        : null,
                   ),
-                  const Divider(height: 32),
-                  _buildTeamRow(
-                    context,
-                    game.homeTeam,
-                    isHome: true,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TeamScreen(teamId: game.homeTeam.id),
-                        ),
-                      );
-                    },
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      _buildTeamRow(
+                            context,
+                            game.awayTeam,
+                            isLive: isLive,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                SlidePageRoute(
+                                  page: TeamScreen(teamId: game.awayTeam.id),
+                                  direction: SlideDirection.right,
+                                ),
+                              );
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 100.ms, duration: 400.ms)
+                          .slideX(begin: -0.1, end: 0),
+                      const SizedBox(height: 24),
+                      Divider(
+                        color: NHLTheme.nhlLightGray.withOpacity(0.3),
+                        height: 1,
+                      ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
+                      const SizedBox(height: 24),
+                      _buildTeamRow(
+                            context,
+                            game.homeTeam,
+                            isHome: true,
+                            isLive: isLive,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                SlidePageRoute(
+                                  page: TeamScreen(teamId: game.homeTeam.id),
+                                  direction: SlideDirection.right,
+                                ),
+                              );
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 300.ms, duration: 400.ms)
+                          .slideX(begin: -0.1, end: 0),
+                    ],
                   ),
-                ],
+                ),
+              )
+              .animate()
+              .fadeIn(delay: 50.ms, duration: 500.ms)
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1, 1),
+                curve: Curves.easeOutCubic,
               ),
-            ),
-          ),
+          const SizedBox(height: 20),
+
+          // Game Info Card
+          Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      _buildInfoRow(
+                        'Status',
+                        game.statusDisplay,
+                        theme,
+                        isLive: isLive,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(
+                        'Start Time',
+                        _formatDateTime(game.startTime),
+                        theme,
+                      ),
+                      if (game.venue?.name != null) ...[
+                        const SizedBox(height: 16),
+                        _buildInfoRow('Venue', game.venue!.name!, theme),
+                      ],
+                      if (game.season != null) ...[
+                        const SizedBox(height: 16),
+                        _buildInfoRow('Season', game.season!, theme),
+                      ],
+                      if (game.gameType != null) ...[
+                        const SizedBox(height: 16),
+                        _buildInfoRow('Game Type', game.gameType!, theme),
+                      ],
+                      const SizedBox(height: 16),
+                      _buildInfoRow('Game ID', game.gameId.toString(), theme),
+                    ],
+                  ),
+                ),
+              )
+              .animate()
+              .fadeIn(delay: 400.ms, duration: 400.ms)
+              .slideY(begin: 0.1, end: 0),
           const SizedBox(height: 16),
-
-          // Status
-          _buildInfoRow('Status', game.statusDisplay, theme),
-          const SizedBox(height: 8),
-
-          // Start time
-          _buildInfoRow(
-            'Start Time',
-            _formatDateTime(game.startTime),
-            theme,
-          ),
-          const SizedBox(height: 8),
-
-          // Venue
-          if (game.venue?.name != null)
-            _buildInfoRow('Venue', game.venue!.name!, theme),
-          if (game.venue?.name != null) const SizedBox(height: 8),
-
-          // Season
-          if (game.season != null)
-            _buildInfoRow('Season', game.season!, theme),
-          if (game.season != null) const SizedBox(height: 8),
-
-          // Game type
-          if (game.gameType != null)
-            _buildInfoRow('Game Type', game.gameType!, theme),
-          if (game.gameType != null) const SizedBox(height: 8),
-
-          // Updated at
-          _buildInfoRow(
-            'Last Updated',
-            _formatDateTime(game.updatedAt),
-            theme,
-          ),
 
           // Metadata section (if exists)
           if (game.metadata != null && game.metadata!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Text(
-              'Additional Information',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
+            Text('Additional Information', style: theme.textTheme.titleLarge)
+                .animate()
+                .fadeIn(delay: 500.ms, duration: 400.ms)
+                .slideX(begin: -0.1, end: 0),
+            const SizedBox(height: 12),
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: game.metadata!.entries.map((entry) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: _buildInfoRow(
-                        entry.key,
-                        entry.value.toString(),
-                        theme,
-                      ),
-                    );
-                  }).toList(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: game.metadata!.entries
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                            final index = entry.key;
+                            final mapEntry = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index < game.metadata!.length - 1
+                                    ? 12
+                                    : 0,
+                              ),
+                              child:
+                                  _buildInfoRow(
+                                        mapEntry.key,
+                                        mapEntry.value.toString(),
+                                        theme,
+                                      )
+                                      .animate(
+                                        delay: Duration(
+                                          milliseconds: 600 + index * 50,
+                                        ),
+                                      )
+                                      .fadeIn(duration: 300.ms)
+                                      .slideX(begin: -0.05, end: 0),
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ),
+                )
+                .animate()
+                .fadeIn(delay: 550.ms, duration: 400.ms)
+                .scale(
+                  begin: const Offset(0.98, 0.98),
+                  end: const Offset(1, 1),
                 ),
-              ),
-            ),
           ],
         ],
       ),
@@ -162,55 +244,102 @@ class GameDetailScreen extends StatelessWidget {
     BuildContext context,
     TeamScore team, {
     bool isHome = false,
+    bool isLive = false,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [
-          if (isHome)
-            Icon(Icons.home, color: theme.primaryColor),
-          if (isHome) const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              team.name,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+    final hasScore = team.score != null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              if (isHome)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: NHLTheme.nhlLightBlue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.home,
+                    color: NHLTheme.nhlLightBlue,
+                    size: 20,
+                  ),
+                ),
+              if (isHome) const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  team.name,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
+                ),
               ),
-            ),
+              // Only show score if it exists, otherwise show nothing for scheduled games
+              if (hasScore)
+                AnimatedScore(
+                  score: team.score,
+                  isLive: isLive,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 32,
+                  ),
+                )
+              else if (isLive)
+                // For live games without score yet, show "-"
+                Text(
+                  '-',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 32,
+                    color: Colors.white60,
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Icon(Icons.chevron_right, color: Colors.white60, size: 24),
+            ],
           ),
-          Text(
-            team.score?.toString() ?? 'N/A',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.chevron_right, color: Colors.grey[400]),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, ThemeData theme) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isLive = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 120,
+          width: 100,
           child: Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+              color: Colors.white60,
+              fontSize: 14,
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: isLive && label == 'Status'
+                  ? NHLTheme.nhlRed
+                  : Colors.white,
+            ),
           ),
         ),
       ],
@@ -223,4 +352,3 @@ class GameDetailScreen extends StatelessWidget {
         '${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
-

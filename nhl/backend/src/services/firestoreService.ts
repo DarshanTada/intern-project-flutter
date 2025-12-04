@@ -48,9 +48,10 @@ export class FirestoreService {
     // Add optional known fields
     if (nhlGame.season) game.season = nhlGame.season;
     if (nhlGame.gameType) game.gameType = nhlGame.gameType;
-    if (nhlGame.venue) {
+    if (nhlGame.venue && nhlGame.venue.name) {
+      // Only include venue if we have at least a name
       game.venue = {
-        id: nhlGame.venue.id,
+        ...(nhlGame.venue.id && { id: nhlGame.venue.id }),
         name: nhlGame.venue.name,
       };
     }
@@ -82,14 +83,18 @@ export class FirestoreService {
     const statusMap: Record<string, string> = {
       'Scheduled': 'scheduled',
       'Pre-Game': 'scheduled',
+      'Preview': 'scheduled',
+      'OK': 'scheduled',  // gameScheduleState: "OK" means scheduled
       'In Progress': 'live',
       'In Progress - Critical': 'live',
+      'Live': 'live',
       'Game Over': 'final',
       'Final': 'final',
-      'Live': 'live',
     };
 
-    return statusMap[detailedState] || detailedState.toLowerCase();
+    // Normalize the input
+    const normalized = detailedState.trim();
+    return statusMap[normalized] || statusMap[normalized.toUpperCase()] || normalized.toLowerCase();
   }
 
   /**

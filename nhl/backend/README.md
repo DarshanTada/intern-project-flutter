@@ -29,13 +29,17 @@ npm install
 ```
 
 2. Configure environment variables:
-   - Create a `.env` file in the `backend/` directory
-   - Set the following variables:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and set the following variables:
      ```
      FIRESTORE_PROJECT_ID=your-project-id
-     GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
-     NHL_API_BASE_URL=https://statsapi.web.nhl.com/api/v1
+     GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+     NHL_API_BASE_URL=https://api-web.nhle.com/v1
      ```
+   - Place your service account key JSON file in the `backend/` directory
 
 ### Running
 

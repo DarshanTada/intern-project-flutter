@@ -63,12 +63,17 @@ npm install
 ```
 
 3. **Configure environment variables:**
-   Create a `.env` file:
-   ```
-   FIRESTORE_PROJECT_ID=your-project-id
-   GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
-   NHL_API_BASE_URL=https://statsapi.web.nhl.com/api/v1
-   ```
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and set:
+     ```
+     FIRESTORE_PROJECT_ID=your-project-id
+     GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+     NHL_API_BASE_URL=https://api-web.nhle.com/v1
+     ```
+   - Place your service account key JSON file in the `backend/` directory
 
 4. **Run the ingestion service:**
 ```bash
@@ -206,24 +211,37 @@ flutter run
 flutter test
 ```
 
-## 📝 Assumptions & Limitations
+## 📝 Assumptions, Limitations & Compromises
 
-### Assumptions
-1. Firestore project is already set up
-2. Service account has Firestore write permissions
-3. NHL Stats API is publicly accessible (no auth required)
-4. Firebase is configured for Flutter app
+### Assumptions Made
+1. **Firestore Project**: Assumes Firestore is already set up and accessible
+2. **Service Account**: Requires service account key with Firestore write permissions
+3. **NHL API**: Uses public NHL API (no authentication required)
+4. **Firebase Configuration**: Assumes Firebase is configured for Flutter app (via FlutterFire CLI or manual setup)
+5. **Environment**: Backend runs locally or in a server environment with Node.js
+6. **Data Availability**: Assumes NHL API has games available for the requested dates
 
 ### Limitations
-1. **Rate Limiting**: No rate limiting implemented (may need for high-frequency runs)
-2. **Retries**: Network errors are logged but not automatically retried
-3. **Team Games Query**: Firestore doesn't support OR queries, so team games are filtered client-side
-4. **Offline Support**: Basic offline support via Firestore caching (not fully implemented)
+1. **Rate Limiting**: No rate limiting implemented for NHL API calls (may need for high-frequency runs)
+2. **Retries**: Network errors are logged but not automatically retried (would need exponential backoff)
+3. **Team Games Query**: Firestore doesn't support OR queries natively, so team games are filtered client-side after fetching
+4. **Offline Support**: Basic offline support via Firestore caching (not fully implemented with local database)
+5. **Team Logos**: Using placeholder icons instead of actual NHL team logos (would require NHL logo API or asset files)
+6. **Composite Indexes**: Some Firestore queries may require composite indexes (Firestore will show error if needed)
 
-### Compromises Made
-1. **Team Games**: Due to Firestore query limitations, we fetch more games than needed and filter client-side
-2. **Composite Indexes**: Some queries may require composite indexes in Firestore (will show error if needed)
-3. **Team Logos**: Using placeholder icons (would need NHL logo API or asset files)
+### Compromises & Simplifications
+1. **Team Games Query**: Due to Firestore query limitations (no OR operator), we fetch more games than needed (last 30 days) and filter client-side to find games for a specific team. This is less efficient but works within Firestore constraints.
+
+2. **Team Statistics**: Stats are only calculated for "final" games. If no final games exist yet, teams will show "No season statistics available yet". This is expected behavior.
+
+3. **Metadata Display**: Additional API fields are stored in `metadata` but only displayed in game detail screen if present. Not all metadata fields are rendered.
+
+4. **Error Handling**: Partial failures are logged but processing continues. This means some games might fail to ingest while others succeed. This is intentional to maximize data ingestion.
+
+5. **Date Range**: The Flutter app queries games for "today" but extends to include the next day (UTC) to account for games starting at midnight UTC. This is a workaround for timezone differences.
+
+### Impossible Requirements
+None encountered. All requirements from the PDF were achievable with the chosen technology stack.
 
 ## 🚧 What Would I Improve Next?
 
@@ -254,18 +272,46 @@ flutter test
 ## 🤖 AI Usage
 
 ### Where AI Was Used
-- Initial project structure setup
-- Type definitions and interfaces
-- Code scaffolding and boilerplate
+- **Initial Project Structure**: Used AI to scaffold the basic project structure (directories, initial files)
+- **Type Definitions**: AI helped generate TypeScript interfaces and Dart models based on API responses
+- **Code Boilerplate**: AI assisted with initial service class structures and widget templates
+- **Error Message Templates**: AI helped format error messages and logging statements
 
-### Where Human Intelligence Was Applied
-- Architecture decisions (idempotency, schema design)
-- Error handling strategies
-- Performance optimizations (batch processing, parallel fetching)
-- Firestore query design and limitations
-- UI/UX decisions and widget structure
-- Security rules design
-- Documentation and explanations
+### Where Human Intelligence (HI) Was Applied
+- **Architecture Decisions**: 
+  - Chose idempotent design using `gameId` as document ID
+  - Decided on schema flexibility with `metadata` object
+  - Selected batch processing approach for performance
+  
+- **Problem Solving**:
+  - Identified and fixed DNS/API endpoint issues
+  - Resolved timezone mismatches between backend and Flutter app
+  - Solved Firestore query limitations with client-side filtering
+  
+- **Performance Optimizations**:
+  - Implemented parallel API fetching for multiple dates
+  - Used Firestore batch writes (up to 500 operations)
+  - Optimized Flutter queries with proper date ranges
+  
+- **Error Handling Strategies**:
+  - Designed graceful degradation for missing data
+  - Implemented fail-fast mechanism for complete API failures
+  - Added comprehensive logging for debugging
+  
+- **UI/UX Decisions**:
+  - Designed game card layout and information hierarchy
+  - Created intuitive navigation flow (list → detail → team)
+  - Implemented real-time updates with StreamBuilder
+  
+- **Security & Best Practices**:
+  - Designed Firestore security rules (read-only for clients)
+  - Ensured sensitive files are excluded from version control
+  - Created environment variable templates
+  
+- **Documentation**:
+  - Wrote comprehensive README with setup instructions
+  - Documented assumptions, limitations, and compromises
+  - Created troubleshooting guides
 
 ## 📚 Additional Resources
 

@@ -33,13 +33,21 @@ class Game {
       homeTeam: TeamScore.fromMap(data['homeTeam'] as Map<String, dynamic>? ?? {}),
       awayTeam: TeamScore.fromMap(data['awayTeam'] as Map<String, dynamic>? ?? {}),
       status: data['status'] as String? ?? 'unknown',
-      season: data['season'] as String?,
-      gameType: data['gameType'] as String?,
+      season: _parseString(data['season']),
+      gameType: _parseString(data['gameType']),
       venue: data['venue'] != null ? Venue.fromMap(data['venue'] as Map<String, dynamic>) : null,
       metadata: data['metadata'] as Map<String, dynamic>?,
       updatedAt: _parseDateTime(data['updatedAt']),
       createdAt: _parseDateTime(data['createdAt']),
     );
+  }
+
+  static String? _parseString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is int) return value.toString();
+    if (value is num) return value.toString();
+    return value.toString();
   }
 
   static DateTime _parseDateTime(dynamic value) {
