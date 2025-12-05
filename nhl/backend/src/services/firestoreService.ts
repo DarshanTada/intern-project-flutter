@@ -34,11 +34,13 @@ export class FirestoreService {
         id: nhlGame.teams.home.team.id,
         name: nhlGame.teams.home.team.name,
         score: nhlGame.teams.home.score ?? null,
+        ...(nhlGame.teams.home.team.logoUrl && { logoUrl: nhlGame.teams.home.team.logoUrl }),
       },
       awayTeam: {
         id: nhlGame.teams.away.team.id,
         name: nhlGame.teams.away.team.name,
         score: nhlGame.teams.away.score ?? null,
+        ...(nhlGame.teams.away.team.logoUrl && { logoUrl: nhlGame.teams.away.team.logoUrl }),
       },
       status: this.normalizeStatus(nhlGame.status.detailedState),
       updatedAt: now,
@@ -208,12 +210,16 @@ export class FirestoreService {
           (isHome && game.homeTeam.score! > game.awayTeam.score!) ||
           (!isHome && game.awayTeam.score! > game.homeTeam.score!);
 
+        // Get logo URL from game data if available
+        const logoUrl = (team.id === game.homeTeam.id ? game.homeTeam.logoUrl : game.awayTeam.logoUrl) || undefined;
+        
         if (statsDoc.exists) {
           const current = statsDoc.data() as FirestoreTeamStats;
           const updated: FirestoreTeamStats = {
             ...current,
             wins: isWinner ? current.wins + 1 : current.wins,
             losses: !isWinner ? current.losses + 1 : current.losses,
+            ...(logoUrl && { logoUrl }), // Update logo URL if available
             lastUpdated: new Date().toISOString(),
           };
           transaction.update(statsRef, updated as any);
@@ -223,6 +229,7 @@ export class FirestoreService {
             teamName: team.name,
             wins: isWinner ? 1 : 0,
             losses: isWinner ? 0 : 1,
+            ...(logoUrl && { logoUrl }), // Include logo URL if available
             lastUpdated: new Date().toISOString(),
           };
           transaction.set(statsRef, newStats);

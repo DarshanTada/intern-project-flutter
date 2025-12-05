@@ -10,6 +10,7 @@ export interface NHLTeam {
   abbreviation?: string;
   teamName?: string;
   locationName?: string;
+  logoUrl?: string; // Logo URL from NHL API
 }
 
 export interface NHLTeamScore {

@@ -9,7 +9,9 @@
     "ingest": "ts-node src/index.ts",
     "dev": "ts-node src/index.ts",
     "watch": "tsc --watch",
-    "add-test-data": "ts-node src/add-test-data.ts"
+    "delete-test-data": "ts-node src/delete-test-data.ts",
+    "delete-all-games": "ts-node src/delete-all-games.ts",
+    "add-sample-game": "ts-node src/add-sample-game.ts"
   },
   "keywords": ["nhl", "scores", "firestore"],
   "author": "",

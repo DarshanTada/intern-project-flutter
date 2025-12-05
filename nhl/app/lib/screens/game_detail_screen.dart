@@ -161,18 +161,12 @@ class GameDetailScreen extends StatelessWidget {
                         _formatDateTime(game.startTime),
                         theme,
                       ),
-                      if (game.venue?.name != null) ...[
-                        const SizedBox(height: 16),
-                        _buildInfoRow('Venue', game.venue!.name!, theme),
-                      ],
-                      if (game.season != null) ...[
-                        const SizedBox(height: 16),
-                        _buildInfoRow('Season', game.season!, theme),
-                      ],
-                      if (game.gameType != null) ...[
-                        const SizedBox(height: 16),
-                        _buildInfoRow('Game Type', game.gameType!, theme),
-                      ],
+                      const SizedBox(height: 16),
+                      _buildInfoRow('Venue', game.venue?.name ?? 'NA', theme),
+                      const SizedBox(height: 16),
+                      _buildInfoRow('Season', game.season ?? 'NA', theme),
+                      const SizedBox(height: 16),
+                      _buildInfoRow('Game Type', game.gameType ?? 'NA', theme),
                       const SizedBox(height: 16),
                       _buildInfoRow('Game ID', game.gameId.toString(), theme),
                     ],
@@ -182,59 +176,6 @@ class GameDetailScreen extends StatelessWidget {
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
               .slideY(begin: 0.1, end: 0),
-          const SizedBox(height: 16),
-
-          // Metadata section (if exists)
-          if (game.metadata != null && game.metadata!.isNotEmpty) ...[
-            Text('Additional Information', style: theme.textTheme.titleLarge)
-                .animate()
-                .fadeIn(delay: 500.ms, duration: 400.ms)
-                .slideX(begin: -0.1, end: 0),
-            const SizedBox(height: 12),
-            Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: game.metadata!.entries
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                            final index = entry.key;
-                            final mapEntry = entry.value;
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                bottom: index < game.metadata!.length - 1
-                                    ? 12
-                                    : 0,
-                              ),
-                              child:
-                                  _buildInfoRow(
-                                        mapEntry.key,
-                                        mapEntry.value.toString(),
-                                        theme,
-                                      )
-                                      .animate(
-                                        delay: Duration(
-                                          milliseconds: 600 + index * 50,
-                                        ),
-                                      )
-                                      .fadeIn(duration: 300.ms)
-                                      .slideX(begin: -0.05, end: 0),
-                            );
-                          })
-                          .toList(),
-                    ),
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: 550.ms, duration: 400.ms)
-                .scale(
-                  begin: const Offset(0.98, 0.98),
-                  end: const Offset(1, 1),
-                ),
-          ],
         ],
       ),
     );

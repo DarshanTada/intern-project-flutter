@@ -18,11 +18,13 @@ export interface FirestoreGame {
     id: number;
     name: string;
     score: number | null;
+    logoUrl?: string;
   };
   awayTeam: {
     id: number;
     name: string;
     score: number | null;
+    logoUrl?: string;
   };
   status: string; // "scheduled", "live", "final", etc.
   season?: string;
@@ -45,6 +47,7 @@ export interface FirestoreTeamStats {
   losses: number;
   ot?: number;
   points?: number;
+  logoUrl?: string; // Team logo URL from NHL API
   lastUpdated: string;
 }
 

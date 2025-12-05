@@ -148,6 +148,7 @@ export class NHLApiService {
             id: game.awayTeam?.id,
             name: awayTeamName,
             abbreviation: game.awayTeam?.abbrev,
+            logoUrl: game.awayTeam?.logo, // Extract logo URL from API
           },
           score: game.awayTeam?.score,
         },
@@ -156,6 +157,7 @@ export class NHLApiService {
             id: game.homeTeam?.id,
             name: homeTeamName,
             abbreviation: game.homeTeam?.abbrev,
+            logoUrl: game.homeTeam?.logo, // Extract logo URL from API
           },
           score: game.homeTeam?.score,
         },

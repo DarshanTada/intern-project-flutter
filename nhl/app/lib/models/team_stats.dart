@@ -6,6 +6,7 @@ class TeamStats {
   final int losses;
   final int? ot;
   final int? points;
+  final String? logoUrl; // Team logo URL from NHL API
   final DateTime lastUpdated;
 
   TeamStats({
@@ -15,6 +16,7 @@ class TeamStats {
     required this.losses,
     this.ot,
     this.points,
+    this.logoUrl,
     required this.lastUpdated,
   });
 
@@ -26,6 +28,7 @@ class TeamStats {
       losses: data['losses'] as int? ?? 0,
       ot: data['ot'] as int?,
       points: data['points'] as int?,
+      logoUrl: data['logoUrl'] as String?,
       lastUpdated: data['lastUpdated'] != null
           ? DateTime.tryParse(data['lastUpdated'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -48,4 +51,3 @@ class TeamStats {
   double get winPercentage => totalGames > 0 ? wins / totalGames : 0.0;
   String get record => '$wins-$losses${ot != null && ot! > 0 ? '-$ot' : ''}';
 }
-

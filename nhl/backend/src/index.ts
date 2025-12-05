@@ -3,6 +3,10 @@
  * 
  * Fetches game data from NHL API and stores it in Firestore
  * with idempotent writes and graceful error handling
+ * 
+ * IMPORTANT: This service ONLY fetches data from the NHL API.
+ * No hardcoded or test data is used. All game data comes directly
+ * from the official NHL Stats API endpoint.
  */
 
 import * as dotenv from 'dotenv';
@@ -17,6 +21,8 @@ dotenv.config();
 interface IngestionOptions {
   days?: number; // Number of days to fetch (default: 1 for today only)
   date?: string; // Specific date in YYYY-MM-DD format (overrides days)
+  finalDate?: string; // Specific date for final games in YYYY-MM-DD format
+  liveDate?: string; // Specific date for live games in YYYY-MM-DD format
 }
 
 class IngestionService {
@@ -103,23 +109,47 @@ class IngestionService {
     }
 
     try {
-      let dates: string[];
+      let dates: string[] = [];
+      const today = new Date().toISOString().split('T')[0];
       
       if (options.date) {
         // Specific date provided
         dates = [options.date];
         Logger.info(`Fetching games for date: ${options.date}`);
       } else {
-        // Fetch today + optional previous days
-        const days = options.days || 1;
-        if (days === 1) {
-          dates = [new Date().toISOString().split('T')[0]];
-          Logger.info('Fetching today\'s games');
-        } else {
-          dates = NHLApiService.getLastNDays(days);
-          Logger.info(`Fetching games for last ${days} days`);
+        // Default: fetch yesterday (for final games) and today (for scheduled/live games)
+        // This ensures we get games in all statuses: scheduled, live, and final
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        dates.push(yesterdayStr); // Yesterday's games (final)
+        dates.push(today); // Today's games (scheduled/live)
+        Logger.info('Fetching games: yesterday (final) and today (scheduled/live)');
+        
+        // Add final date if specified (overrides yesterday)
+        if (options.finalDate) {
+          dates = dates.filter(d => d !== yesterdayStr);
+          dates.push(options.finalDate);
+          Logger.info(`Also fetching final games for date: ${options.finalDate}`);
+        }
+        
+        // Add live date if specified (overrides today)
+        if (options.liveDate) {
+          dates = dates.filter(d => d !== today);
+          dates.push(options.liveDate);
+          Logger.info(`Also fetching live games for date: ${options.liveDate}`);
+        }
+        
+        // If days option is provided (and no specific dates), use it
+        if (options.days && options.days > 1 && !options.finalDate && !options.liveDate) {
+          dates = NHLApiService.getLastNDays(options.days);
+          Logger.info(`Fetching games for last ${options.days} days`);
         }
       }
+      
+      // Remove duplicates
+      dates = [...new Set(dates)];
 
       // Fetch games from NHL API
       const { results: gamesByDate, failedDates } = await this.nhlApi.getGamesByDates(dates);
@@ -199,6 +229,12 @@ async function main() {
       i++;
     } else if (args[i] === '--date' && i + 1 < args.length) {
       options.date = args[i + 1];
+      i++;
+    } else if (args[i] === '--final-date' && i + 1 < args.length) {
+      options.finalDate = args[i + 1];
+      i++;
+    } else if (args[i] === '--live-date' && i + 1 < args.length) {
+      options.liveDate = args[i + 1];
       i++;
     }
   }
